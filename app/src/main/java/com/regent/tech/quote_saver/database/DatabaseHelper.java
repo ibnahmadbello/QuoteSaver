@@ -8,6 +8,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.regent.tech.quote_saver.database.model.Quote;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final int DATABASE_VERSION = 1;
@@ -68,4 +71,65 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return quote;
     }
+
+    public List<Quote> getAllQuotes(){
+        List<Quote> quotes = new ArrayList<>();
+
+        String selectQuery = "SELECT * FROM " + Quote.TABLE_NAME + " ORDER BY "
+                + Quote.COLUMN_TIMESTAMP + " DESC";
+
+        SQLiteDatabase database = this.getWritableDatabase();
+        Cursor cursor = database.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst()){
+            do {
+                Quote quote = new Quote();
+                quote.setId(cursor.getInt(cursor.getColumnIndex(Quote.COLUMN_ID)));
+                quote.setQuote(cursor.getString(cursor.getColumnIndex(Quote.COLUMN_QUOTE)));
+                quote.setQuote_author(cursor.getString(cursor.getColumnIndex(Quote.COLUMN_QUOTE_AUTHOR)));
+                quote.setQuote_source(cursor.getString(cursor.getColumnIndex(Quote.COLUMN_QUOTE_SOURCE)));
+                quote.setTimestamp(cursor.getString(cursor.getColumnIndex(Quote.COLUMN_TIMESTAMP)));
+
+                quotes.add(quote);
+
+            } while (cursor.moveToNext());
+
+            database.close();
+        }
+
+        return quotes;
+    }
+
+    public int getQuotesCount(){
+        String selectQuery = "SELECT * FROM " + Quote.TABLE_NAME;
+        SQLiteDatabase database = this.getReadableDatabase();
+        Cursor cursor = database.rawQuery(selectQuery, null);
+
+        int count = cursor.getCount();
+        cursor.close();
+
+        return count;
+    }
+
+    public int updateQuote(Quote quote){
+        SQLiteDatabase database = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(Quote.COLUMN_QUOTE, quote.getQuote());
+        values.put(Quote.COLUMN_QUOTE_SOURCE, quote.getQuote_source());
+        values.put(Quote.COLUMN_QUOTE_AUTHOR, quote.getQuote_author());
+
+        return database.update(Quote.TABLE_NAME, values, Quote.COLUMN_ID + " = ?",
+                new String[]{String.valueOf(quote.getId())});
+    }
+
+    public void deleteQuote(Quote quote){
+        SQLiteDatabase database = this.getWritableDatabase();
+
+        database.delete(Quote.TABLE_NAME, Quote.COLUMN_ID + " = ?",
+                new String[]{String.valueOf(quote.getId())});
+
+        database.close();
+    }
+
 }
